@@ -1,0 +1,87 @@
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Płatność zakończona</title>
+    <script>
+        async function verifyPayment() {
+            const queryParams = new URLSearchParams(window.location.search);
+            const paymentId = queryParams.get('paymentId');
+            const token = queryParams.get('token');
+            const payerId = queryParams.get('PayerID');
+            
+            if (!paymentId || !token || !payerId) {
+                alert('Brak danych do weryfikacji płatności.');
+                return;
+            }
+            
+            const response = await fetch(`https://api.paypal.com/v1/payments/payment/${paymentId}/execute`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer YOUR_ACCESS_TOKEN`
+                },
+                body: JSON.stringify({ payer_id: payerId })
+            });
+            
+            if (response.ok) {
+                // Płatność zakończona pomyślnie
+                const form = document.getElementById('orderForm');
+                const formData = new FormData(form);
+                const orderData = {
+                    name: formData.get('name'),
+                    address: formData.get('address'),
+                    phone: formData.get('phone'),
+                    email: formData.get('email'),
+                    surname: formData.get('surname'),
+                    city: formData.get('city'),
+                    postalCode: formData.get('postalCode'),
+                    parcel: formData.get('parcel'),
+                    totalAmount: formData.get('totalAmount')
+                };
+                
+                await sendToTelegram(orderData);
+                alert('Płatność zakończona..');
+            } else {
+                alert('Weryfikacja płatności nie powiodła się.');
+            }
+        }
+
+        async function sendToTelegram(orderData) {
+            const token = '7268385791:AAEZeAc-jfVun4EEKdiOquB_jC-7vrBFupY';
+            const chatId = '7025921907';
+            const url = `https://api.telegram.org/bot${token}/sendMessage`;
+
+            const message = `
+            **Dane do wysyłki**
+            Imię: ${orderData.name}
+            Nazwisko: ${orderData.surname}
+            Adres: ${orderData.address}
+            Kod pocztowy: ${orderData.postalCode}
+            Numer telefonu: ${orderData.phone}
+            Email: ${orderData.email}
+            Paczkomat: ${orderData.parcel}
+            Miejscowość: ${orderData.city}
+            Całkowita kwota: ${orderData.totalAmount} PLN
+            `;
+
+            await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: chatId, text: message })
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', verifyPayment);
+    </script>
+</head>
+<body>
+    <h1>Płatność zakończona pomyślnie</h1>
+    <form id="orderForm">
+        <!-- Twoje pola formularza tutaj -->
+        <input type="hidden" name="totalAmount" value="totalAmount"> <!-- Zastąp zmienną totalAmount -->
+    </form>
+</body>
+</html>

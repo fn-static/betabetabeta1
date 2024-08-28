@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <iframe src="https://example.com" sandbox="allow-same-origin allow-scripts"></iframe>
+    <script src="https://js.stripe.com/v3/"></script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OneVape</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <header>
+        <h1 class="animated-heading">
+            <span>O</span>
+            <span>n</span>
+            <span>e</span>
+            <span>V</span>
+            <span>a</span>
+            <span>p</span>
+            <span>e</span>
+        </h1>
+    </header>
+
+    <div class="buttons">
+        <button id="productsButton">Produkty</button>
+        <button id="contactButton">Kontakt</button>
+    </div>
+
+    <!-- Sekcja produktów -->
+    <section id="products" class="hidden">
+        <h2>Nasze Produkty</h2>
+        <div class="product-list">
+            <div class="product-item" data-product="1" data-price="29.99">
+                <img src="product1.jpg" alt="Produkt 1">
+                <p>Produkt 1</p>
+                <p class="price">Cena: 29.99 PLN</p>
+            </div>
+            <div class="product-item" data-product="2" data-price="39.99">
+                <img src="product2.jpg" alt="Produkt 2">
+                <p>Produkt 2</p>
+                <p class="price">Cena: 39.99 PLN</p>
+            </div>
+            <div class="product-item" data-product="3" data-price="49.99">
+                <img src="product3.jpg" alt="Produkt 3">
+                <p>Produkt 3</p>
+                <p class="price">Cena: 49.99 PLN</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modal produktu -->
+    <div id="productModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close" id="closeProductModal">&times;</span>
+            <img id="modalImage" src="" alt="Zdjęcie produktu">
+            <p id="modalText"></p>
+
+            <!-- Wybór smaku -->
+            <label for="flavorSelect">Wybierz smak:</label>
+            <select id="flavorSelect">
+                <option value="mango">Mango</option>
+                <option value="blueberry">Jagoda</option>
+                <option value="strawberry">Truskawka</option>
+            </select>
+
+            <!-- Wybór ilości -->
+            <label for="quantityInput">Wybierz ilość:</label>
+            <input id="quantityInput" type="number" min="1" value="1">
+
+            <!-- Przycisk "Dodaj do koszyka" -->
+            <button id="addToCartButton">Dodaj do koszyka</button>
+        </div>
+    </div>
+
+    <!-- Koszyk -->
+    <div id="cart" class="cart">
+        <button id="cartButton">Koszyk</button>
+        <div id="cartContent" class="cart-content hidden">
+            <h2>Twój koszyk</h2>
+            <ul id="cartItems"></ul>
+            <button id="checkoutButton">Zamów</button>
+        </div>
+    </div>
+
+    <!-- Modal zamówienia -->
+    <div id="orderModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close" id="closeOrderModal">&times;</span>
+            <h2>Formularz zamówienia</h2>
+            <form id="orderForm">
+                <!-- Formularz z imieniem i nazwiskiem w jednej linii -->
+                <div class="name1">
+                    <div class="name1">
+                        <label for="name">Imię:</label>
+                        <input id="name" name="name" type="text" required>
+                    </div>
+                    <div class="name1">
+                        <label for="surname">Nazwisko:</label>
+                        <input id="surname" name="surname" type="text" required>
+                    </div>
+                </div>
+
+                <label for="phone">Nr telefonu:</label>
+                <input id="phone" name="phone" type="tel" required>
+
+                <label for="email">Email:</label>
+                <input id="email" name="email" type="email" required>
+
+                <label for="address">Adres:</label>
+                <input id="address" name="address" type="text" required>
+
+                <label for="postalCode">Kod pocztowy:</label>
+                <input id="postalCode" name="postalCode" type="text" required>
+
+                <label for="parcel">Nazwa/Adres paczkomatu:</label>
+                <input id="parcel" name="parcel" type="text">
+
+                <label for="city">Miejscowość:</label>
+                <input id="city" name="city" type="text" required>
+
+                <input type="hidden" id="totalAmount" name="totalAmount" value="">
+
+                <button type="button" id="payButton">Zapłać</button>
+                <button type="button" id="stripePayButton">Zapłać kartą</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stripe Payment Script -->
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        document.getElementById('stripePayButton').addEventListener('click', async () => {
+            // Initialize Stripe
+            const stripe = Stripe('pk_live_51Pb86nEwxRR5jgDum9x9Mr1tgAJz1BIqQMWYDiXZ2HHUhWQfP6j4k92DYiOihrGGqrOXqIVeAcSLzdQQYGtL6gCv00A9birhfS'); // Zamień na swój klucz publiczny Stripe
+
+            // Create a payment intent on the server (backend) and get the client secret
+            const response = await fetch('/create-payment-intent', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    amount: document.getElementById('totalAmount').value
+                })
+            });
+
+            const { clientSecret } = await response.json();
+
+            // Confirm the payment with Stripe
+            const { error } = await stripe.confirmCardPayment(clientSecret, {
+                payment_method: {
+                    card: {
+                        // Get card details from your form or use Stripe Elements
+                    }
+                }
+            });
+
+            if (error) {
+                alert('Płatność nie powiodła się: ' + error.message);
+            } else {
+                // Payment successful
+                alert('Płatność zakończona pomyślnie.');
+                // Optionally, you can redirect or update UI here
+            }
+        });
+    </script>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
