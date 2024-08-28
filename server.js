@@ -1,4 +1,5 @@
 // server.js
+const cors = require('cors');
 const express = require('express');
 const bodyParser = require('body-parser');
 const stripe = require('stripe')('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'); // Zamień na swój klucz tajny Stripe
